@@ -26,14 +26,41 @@ private:
 public:
 	m6502(/* args */);
 	~m6502();
+
+public:
+	enum StatusFlags
+	{
+		C = (1 << 0),	//0: Carry Flag
+		Z = (1 << 1),	//1: Zero Flag
+		I = (1 << 2), 	//2: Interrupt disable
+		D = (1 << 3), 	//3: Decimal mode
+		B = (1 << 4), 	//4: Break
+		U= (1 << 5), 	//5: Unused
+		V = (1 << 6), 	//6: Overflow
+		N = (1 << 7),	//7: Negative
+	};
+
+	uint16_t PC = 0x00; //Program counter
+  	uint8_t SP = 0x00; //Stack pointer
+  	uint8_t A = 0x00, X = 0x00, Y = 0x00; //Registers
+	uint8_t PS = 0x00; // Processor Status Register
+
 public:
 	void ConnectBus(Bus *n){
 		bus = n;
 	}
+	
+	// TODO: 12 Adressing modes
+
 private:
 	Bus *bus = nullptr;
 	uint8_t read(uint16_t addr);
 	void write(uint16_t addr, uint8_t data);
+	
+	// Functions for Status register
+	uint8_t GetFlag(StatusFlags flag);
+	void SetFlag(StatusFlags flag, bool value);
+
 };
 
 m6502::m6502(/* args */)
@@ -53,36 +80,3 @@ void m6502::write(uint16_t addr, uint8_t data)
 {
 	return bus->write(addr, data);
 }
-
-
-// namespace m6502
-// {
-// 	using Byte = unsigned char;
-// 	using Word = unsigned short;
-
-// 	struct Mem;
-// 	struct CPU;
-// 	struct StatusFlags;
-// }
-
-// struct m6502::StatusFlags
-// {
-//   // Status flags
-//   Byte C : 1;	//0: Carry Flag
-// 	Byte Z : 1;	//1: Zero Flag
-// 	Byte I : 1; //2: Interrupt disable
-// 	Byte D : 1; //3: Decimal mode
-// 	Byte B : 1; //4: Break
-// 	Byte Unused : 1; //5: Unused
-// 	Byte V : 1; //6: Overflow
-// 	Byte N : 1; //7: Negative
-// };
-
-// struct m6502::CPU
-// {
-
-//   Word PC; //Program counter
-//   Byte SP; //Stack pointer
-
-//   Byte A, X, Y; //Registers
-// };
