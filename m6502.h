@@ -55,7 +55,6 @@ public:
 private:
 	void reset();
 	
-	// A single clock cycle
 	void clock();
 	// Interrupt Request can be ignored depending on I flag
 	void IRQ();
@@ -75,20 +74,15 @@ private:
 	uint8_t  opcode      = 0x00;
 	// Remaining cycles
 	uint8_t  cycles      = 0;
+	// Useful for debugging only
 	uint32_t clock_count = 0;
 
 private:
 	// Addressing Modes
 	//TODO?: Accumulator adressing
-	// Immediate Addressing: second byte of instruction contains operand, with no further memory addressing required.
 	uint8_t IMM();	
-	// Absolute Adressing: Allows access to entire 64k of addressible memory.
-	// second byte -> 8 low order bits of effective address, third byte -> 8 high order bits of effective address. 
 	uint8_t ABS();	
-	// Zero Page Adressing: fetch only second byte assuming 0 high address byte. shorter code execution time.
 	uint8_t ZP0();
-	// Indexed Zero Page Adressing: effective address = sencond byte + index register. 
-	// Because this is "zero page" addressing no carry added to high order bits and no page boundry crossing.
 	uint8_t ZPX();	
 	uint8_t ZPY();
 	// Indexed Absolute Adressing: Address = Index Register + second & third bytes.
@@ -96,7 +90,6 @@ private:
 	// Index may modify multiple fields -> slower coding and execution time.
 	uint8_t ABX();	
 	uint8_t ABY();
-	// Implied Addressing: The address containing the operand is implicitly stated in the OPCODE of the instruction.
 	uint8_t IMP();
 	// Relative Addressing: only used with branch instruction and establishes destination for conditional branch
 	// second byte is operand. Operand is an offset which is added to PC when PC is set at next instruction

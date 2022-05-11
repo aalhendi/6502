@@ -49,3 +49,130 @@ void m6502::reset(){
 		SetFlag(I, 0x01);
 		//TODO: Initialize memory
 	}
+
+// A single clock cycle
+void m6502::clock(){
+    // TODO: Make emulation clock cycle accurate.
+    // Only exec instruction when internal cycles remaining is zero
+    if (cycles == 0){
+        // Read next instruction byte
+        opcode = read(PC);
+        
+        // Always set U to true
+        SetFlag(U, true);
+
+        // Increment PC preparing for read of nxt byte
+        PC++;
+
+        // Lookup number of cycles for instruction
+        cycles = lookup[opcode].cycles;
+
+        // Call addressing mode function via pointer stored in lookup table.
+        // Store number of extra cycles returned
+        uint8_t addr_mode = (this->*lookup[opcode].addrmode)();
+
+        // Repeat for operation function.
+        uint8_t operation = (this->*lookup[opcode].operate)();
+
+        // Adjust cycle math
+        cycles += (addr_mode & operation);
+
+        SetFlag(U, true);
+
+    }
+    // Unused global clock count for debugging
+	clock_count++;
+
+	// Cycle complete. Decrement remaining
+	cycles--;
+}
+
+// Addressing Modes
+
+// Implied Addressing: The address containing the operand is implicitly stated in the OPCODE of the instruction.
+uint8_t m6502::IMP(){
+    // Implied could act on accumulator 
+    fetched = A;
+    return 0;
+}
+
+// Immediate Addressing: second byte of instruction contains operand, with no further memory addressing required.
+uint8_t m6502::IMM(){
+    addr_abs = PC++;
+    return 0;
+}
+
+// Zero Page Adressing: fetch only second byte assuming 0 high address byte. shorter code execution time.
+uint8_t m6502::ZP0(){
+    addr_abs = read(PC);
+    PC++;
+    addr_abs &= 0x00FF;
+    return 0;
+}
+
+// Indexed Zero Page Adressing: effective address = sencond byte + index register. 
+// Because this is "zero page" addressing no carry added to high order bits and no page boundry crossing.
+uint8_t m6502::ZPX(){
+    addr_abs = (read(PC) + X);
+    PC++;
+    addr_abs &= 0x00FF;
+    return 0;
+}
+
+uint8_t m6502::ZPY(){
+    addr_abs = (read(PC) + Y);
+    PC++;
+    addr_abs &= 0x00FF;
+    return 0;
+}
+
+// Absolute Adressing: Allows access to entire 64k of addressible memory.
+// second byte -> 8 low order bits of effective address, third byte -> 8 high order bits of effective address. 
+uint8_t m6502::ABS(){
+    uint8_t lo = read(PC); 
+    PC++;
+    uint8_t hi = read(PC);
+    PC++;
+
+    addr_abs = (hi << 8) | lo;
+
+    return 0;
+}
+
+
+// Indexed Absolute Adressing: Address = Index Register + second & third bytes.
+// Index contains index/count & instruction contains base address. Allows referencing to any location.
+// Index may modify multiple fields -> slower coding and execution time.
+uint8_t m6502::ABX(){
+    uint8_t lo = read(PC); 
+    PC++;
+    uint8_t hi = read(PC);
+    PC++;
+
+    addr_abs = (hi << 8) | lo;
+    addr_abs += X;
+
+    // Check if high byte has changed due to overflow from the carry bit in the low byte.
+    if((addr_abs & 0xFF00) != (hi << 8)){
+        return 1;
+    } else{
+        return 0;
+    }
+}
+
+uint8_t m6502::ABY(){
+    uint8_t lo = read(PC); 
+    PC++;
+    uint8_t hi = read(PC);
+    PC++;
+
+    addr_abs = (hi << 8) | lo;
+    addr_abs += Y;
+
+    // Check if high byte has changed due to overflow from the carry bit in the low byte.
+    if((addr_abs & 0xFF00) != (hi << 8)){
+        return 1;
+    } else{
+        return 0;
+    }
+}
